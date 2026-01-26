@@ -10,6 +10,7 @@ https://github.com/huggingface/transformers/blob/main/src/transformers/models/gp
 import math
 import inspect
 from dataclasses import dataclass
+import time #Q1
 
 import torch
 import torch.nn as nn
@@ -309,7 +310,9 @@ class GPT(nn.Module):
         the sequence max_new_tokens times, feeding the predictions back into the model each time.
         Most likely you'll want to make sure to be in model.eval() mode of operation for this.
         """
+        token_time=[] #Q1
         for _ in range(max_new_tokens):
+            start=time.time() #Q1
             # if the sequence context is growing too long we must crop it at block_size
             idx_cond = idx if idx.size(1) <= self.config.block_size else idx[:, -self.config.block_size:]
             # forward the model to get the logits for the index in the sequence
@@ -326,5 +329,9 @@ class GPT(nn.Module):
             idx_next = torch.multinomial(probs, num_samples=1)
             # append sampled index to the running sequence and continue
             idx = torch.cat((idx, idx_next), dim=1)
+            end=time.time() #Q1
+            token_time.append(end-start) #Q1
 
+        avg_time_per_token=sum(token_time)/len(token_time) #Q1
+        print("Average time per token=",avg_time_per_token) #Q1
         return idx
