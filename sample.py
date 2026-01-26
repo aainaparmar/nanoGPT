@@ -7,6 +7,7 @@ from contextlib import nullcontext
 import torch
 import tiktoken
 from model import GPTConfig, GPT
+import time #Q1
 
 # -----------------------------------------------------------------------------
 init_from = 'resume' # either 'resume' (from an out_dir) or a gpt2 variant (e.g. 'gpt2-xl')
@@ -84,6 +85,10 @@ x = (torch.tensor(start_ids, dtype=torch.long, device=device)[None, ...])
 with torch.no_grad():
     with ctx:
         for k in range(num_samples):
+            start = time.time() #Q1
             y = model.generate(x, max_new_tokens, temperature=temperature, top_k=top_k)
+            end = time.time()
+            total_time= (end-start) #Q1
+            print("Total Time=", total_time) #Q1
             print(decode(y[0].tolist()))
             print('---------------')
