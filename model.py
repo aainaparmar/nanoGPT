@@ -199,7 +199,7 @@ class GPT(nn.Module):
         #for block in self.transformer.h: #Q2
            # x = block(x) #Q2
         if not kvcache: #Q2
-            kvcache = [None] * config.n_layer #Q2
+            kvcache = [None] * self.config.n_layer #Q2
         else: #Q2
             x = x[:,-1,:] #Q2
 
