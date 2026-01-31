@@ -61,9 +61,9 @@ class CausalSelfAttention(nn.Module):
             prev_k,prev_v = kvcache #Q2
             k = torch.cat(prev_k, k, dim=1) #Q2
             v = torch.cat(prev_v, v, dim=1) #Q2
-            new_kvcache= [k , v] #Q2
             
-        curr_T= k.shape(1) #Q2
+        new_kvcache= [k , v] #Q2    
+        curr_T= k.shape[1] #Q2
         
         k = k.view(B, curr_T, self.n_head, C // self.n_head).transpose(1, 2) # (B, nh, T, hs) #Q2
         q = q.view(B, T, self.n_head, C // self.n_head).transpose(1, 2) # (B, nh, T, hs) 
