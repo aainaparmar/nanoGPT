@@ -59,8 +59,8 @@ class CausalSelfAttention(nn.Module):
 
         if kvcache: #Q2
             prev_k,prev_v = kvcache #Q2
-            k = torch.cat(prev_k, k, dim=1) #Q2
-            v = torch.cat(prev_v, v, dim=1) #Q2
+            k = torch.cat([prev_k, k], dim=1) #Q2
+            v = torch.cat([prev_v, v], dim=1) #Q2
             
         new_kvcache= [k , v] #Q2    
         curr_T= k.shape[1] #Q2
@@ -201,7 +201,7 @@ class GPT(nn.Module):
         if not kvcache: #Q2
             kvcache = [None] * self.config.n_layer #Q2
         else: #Q2
-            x = x[:,-1,:] #Q2
+            x = x[:,[-1],:] #Q2
 
         new_kvcache=[] #Q2
         for block, kvcache_block in zip(self.transformer.h, kvcache): #Q2
