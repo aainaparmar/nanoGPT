@@ -16,6 +16,96 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
+class RadixNode: #Q3
+    def __init__(self, tokens, parent=None):
+        self.tokens = tokens              # contiguous token list
+        self.parent = parent
+        self.children = []                # list of RadixNode
+        self.kvcache = None               # full KV up to this node
+        self.seq_len = 0                  # total tokens up to this node
+
+
+class RadixTree: #Q3
+    def __init__(self):
+        self.root = RadixNode(tokens=[])
+
+    def insert(self, tokens):
+        node = self.root
+        i = 0
+
+        while i < len(tokens):
+            matched = False
+            for child in node.children:
+                common = self._lcp(child.tokens, tokens[i:])
+                if common > 0:
+                    if common < len(child.tokens):
+                        # split node
+                        split = RadixNode(
+                            child.tokens[common:], parent=child
+                        )
+                        split.children = child.children
+                        split.kvcache = child.kvcache
+                        split.seq_len = child.seq_len
+
+                        child.tokens = child.tokens[:common]
+                        child.children = [split]
+                        child.kvcache = None
+
+                    node = child
+                    i += common
+                    matched = True
+                    break
+
+            if not matched:
+                new_node = RadixNode(tokens[i:], parent=node)
+                node.children.append(new_node)
+                return
+
+    def find_deepest(self, tokens):
+        node = self.root
+        i = 0
+
+        while i < len(tokens):
+            matched = False
+            for child in node.children:
+                if tokens[i:i+len(child.tokens)] == child.tokens:
+                    node = child
+                    i += len(child.tokens)
+                    matched = True
+                    break
+            if not matched:
+                break
+
+        return node
+
+    @staticmethod
+    def _lcp(a, b):
+        i = 0
+        while i < len(a) and i < len(b) and a[i] == b[i]:
+            i += 1
+        return i
+        
+    def print_tree_pretty(self):
+        self._print_pretty(self.root, "", True)
+
+    def _print_pretty(self, node, prefix, is_last):
+        connector = "└── " if is_last else "├── "
+    
+        if node.tokens:
+            print(prefix + connector + str(node.tokens))
+        else:
+            print(prefix + connector + "<ROOT>")
+    
+        new_prefix = prefix + ("    " if is_last else "│   ")
+    
+        for i, child in enumerate(node.children):
+            self._print_pretty(
+                child,
+                new_prefix,
+                i == len(node.children) - 1
+            )
+
+
 class LayerNorm(nn.Module):
     """ LayerNorm but with an optional bias. PyTorch doesn't support simply bias=False """
 
