@@ -280,7 +280,16 @@ class GPT(nn.Module):
         device = idx.device
         b, t = idx.size()
         assert t <= self.config.block_size, f"Cannot forward sequence of length {t}, block size is only {self.config.block_size}"
-        pos = torch.arange(0, t, dtype=torch.long, device=device) # shape (t)
+
+        if kvcache is None: #Q3
+            pos = torch.arange(0, t, device=device).unsqueeze(0)
+        else:
+            pos = torch.arange(
+                pos_offset,
+                pos_offset + t,
+                device=device
+            ).unsqueeze(0)
+        #pos = torch.arange(0, t, dtype=torch.long, device=device) # shape (t)
 
         # forward the GPT model itself
         tok_emb = self.transformer.wte(idx) # token embeddings of shape (b, t, n_embd)
