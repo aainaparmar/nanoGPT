@@ -105,6 +105,29 @@ class RadixTree: #Q3
                 i == len(node.children) - 1
             )
 
+@torch.no_grad()
+def compute_all_kv(model, tree, device):
+    def dfs(node):
+        if node.parent is None:
+            node.kvcache = None
+            node.seq_len = 0
+        else:
+            idx = torch.tensor(
+                node.tokens,
+                device=device
+            ).unsqueeze(0)
+
+            _, _, node.kvcache = model(
+                idx,
+                kvcache=node.parent.kvcache,
+                pos_offset=node.parent.seq_len
+            )
+            node.seq_len = node.parent.seq_len + len(node.tokens)
+
+        for child in node.children:
+            dfs(child)
+
+    dfs(tree.root)
 
 class LayerNorm(nn.Module):
     """ LayerNorm but with an optional bias. PyTorch doesn't support simply bias=False """
