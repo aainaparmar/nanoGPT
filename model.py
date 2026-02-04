@@ -105,8 +105,8 @@ class RadixTree: #Q3
                 i == len(node.children) - 1
             )
 
-@torch.no_grad()
-def compute_all_kv(model, tree, device):
+@torch.no_grad() #Q3
+def compute_all_kv(model, tree, device): #Q3
     def dfs(node):
         if node.parent is None:
             node.kvcache = None
@@ -121,6 +121,7 @@ def compute_all_kv(model, tree, device):
                 idx,
                 kvcache=node.parent.kvcache,
                 pos_offset=node.parent.seq_len
+                is_prefill=True
             )
             node.seq_len = node.parent.seq_len + len(node.tokens)
 
