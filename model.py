@@ -276,7 +276,7 @@ class GPT(nn.Module):
         elif isinstance(module, nn.Embedding):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
-    def forward(self, idx, targets=None, kvcache=None, pos_offset=0): #Q3
+    def forward(self, idx, targets=None, kvcache=None, pos_offset=0, is_prefill=False): #Q3
         device = idx.device
         b, t = idx.size()
         assert t <= self.config.block_size, f"Cannot forward sequence of length {t}, block size is only {self.config.block_size}"
@@ -299,7 +299,7 @@ class GPT(nn.Module):
            # x = block(x) #Q2
         if not kvcache: #Q2
             kvcache = [None] * self.config.n_layer #Q2
-        else: #Q2
+        elif not is_prefill: #Q3
             x = x[:,[-1],:] #Q2
 
         new_kvcache=[] #Q2
