@@ -124,8 +124,9 @@ with torch.no_grad():
 end_time = time.time()
 print(f"Total time: {end_time - start_time:.2f}s")
 for i, y in enumerate(output):
-    text = decode(y.tolist())
+    text = decode(y[0].tolist())
     print(f"=== Sample {i} ===")
     print(text)
     print("---------------")
+
 
