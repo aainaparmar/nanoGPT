@@ -123,3 +123,4 @@ with torch.no_grad():
 
 end_time = time.time()
 print(f"Total time: {end_time - start_time:.2f}s")
+print(output)
