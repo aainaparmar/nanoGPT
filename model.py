@@ -16,6 +16,13 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
+def idx_to_tokens(idx):
+    # idx: (1, T) or (T,)
+    if isinstance(idx, torch.Tensor):
+        idx = idx.squeeze(0)
+        return idx.tolist()
+    return idx
+
 class RadixNode: #Q3
     def __init__(self, tokens, parent=None):
         self.tokens = tokens              # contiguous token list
@@ -29,7 +36,8 @@ class RadixTree: #Q3
     def __init__(self):
         self.root = RadixNode(tokens=[])
 
-    def insert(self, tokens):
+    def insert(self, idx):
+        tokens = idx_to_tokens(idx)
         node = self.root
         i = 0
 
@@ -61,7 +69,8 @@ class RadixTree: #Q3
                 node.children.append(new_node)
                 return
 
-    def find_deepest(self, tokens):
+    def find_deepest(self, idx):
+        tokens = idx_to_tokens(idx)
         node = self.root
         i = 0
 
@@ -462,6 +471,7 @@ class GPT(nn.Module):
         Most likely you'll want to make sure to be in model.eval() mode of operation for this.
         """
         token_time=[] #Q1
+        
         kvcache=None #Q2
         for _ in range(max_new_tokens):
             start=time.time() #Q1
@@ -487,3 +497,44 @@ class GPT(nn.Module):
         avg_time_per_token=sum(token_time)/len(token_time) #Q1
         print("Average time per token=",avg_time_per_token) #Q1
         return idx
+    #Q3    
+    def generate_batch_with_radix(self, batch_prompts, max_new_tokens, temperature=1.0, top_k=None):
+        
+        tree = RadixTree()
+
+        for x in batch_prompts:
+            tree.insert(x)
+            
+        #Computing kv caches for all the nodes in the tree #Q3
+        compute_all_kv(self, tree, device=batch_prompts[0].device) 
+
+        results = []
+        for idx in batch_prompts:
+
+            node = tree.find_deepest(idx)
+            kvcache = node.kvcache
+            for _ in range(max_new_tokens):
+                start=time.time() #Q1
+                # if the sequence context is growing too long we must crop it at block_size
+                idx_cond = idx if idx.size(1) <= self.config.block_size else idx[:, -self.config.block_size:]
+                # forward the model to get the logits for the index in the sequence
+                logits, _, kvcache = self(idx_cond,kvcache=kvcache) #Q2
+                # pluck the logits at the final step and scale by desired temperature
+                logits = logits[:, -1, :] / temperature
+                # optionally crop the logits to only the top k options
+                if top_k is not None:
+                    v, _ = torch.topk(logits, min(top_k, logits.size(-1)))
+                    logits[logits < v[:, [-1]]] = -float('Inf')
+                # apply softmax to convert logits to (normalized) probabilities
+                probs = F.softmax(logits, dim=-1)
+                # sample from the distribution
+                idx_next = torch.multinomial(probs, num_samples=1)
+                # append sampled index to the running sequence and continue
+                idx = torch.cat((idx, idx_next), dim=1)
+                end=time.time() #Q1
+                token_time.append(end-start) #Q1
+    
+            avg_time_per_token=sum(token_time)/len(token_time) #Q1
+            print("Average time per token=",avg_time_per_token) #Q1
+            results.append(idx)
+        return results
