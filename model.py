@@ -129,7 +129,7 @@ def compute_all_kv(model, tree, device): #Q3
             _, _, node.kvcache = model(
                 idx,
                 kvcache=node.parent.kvcache,
-                pos_offset=node.parent.seq_len
+                pos_offset=node.parent.seq_len,
                 is_prefill=True
             )
             node.seq_len = node.parent.seq_len + len(node.tokens)
@@ -513,6 +513,7 @@ class GPT(nn.Module):
 
             node = tree.find_deepest(idx)
             kvcache = node.kvcache
+            token_time = []
             for _ in range(max_new_tokens):
                 start=time.time() #Q1
                 # if the sequence context is growing too long we must crop it at block_size
