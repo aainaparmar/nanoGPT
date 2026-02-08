@@ -67,8 +67,8 @@ class CausalSelfAttention(nn.Module):
         curr_T = k.shape[1]
 
         if curr_T > self.block_size:
-            k = k[:, -self.block_size:, :, :]
-            v = v[:, -self.block_size:, :, :]
+            k = k[:, -self.block_size:, :]
+            v = v[:, -self.block_size:, :]
             curr_T = self.block_size
 
         new_kvcache=[k,v]
