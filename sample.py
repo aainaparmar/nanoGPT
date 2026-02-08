@@ -6,7 +6,7 @@ import pickle
 from contextlib import nullcontext
 import torch
 import tiktoken
-from model import GPTConfig, GPT
+from model_kv import GPTConfig, GPT
 import time #Q1
 
 # -----------------------------------------------------------------------------
